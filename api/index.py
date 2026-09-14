@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal, Optional
 
 # CONFIGURATION
-API_KEY = "student-api-key-FDRD"
+API_KEY = "2024-2-00682-api-key-FDRD"
 API_VERSION = "1.0"
 API_PREFIX = "/api/v1"
 APP_TITLE = "Simple Plant API"
