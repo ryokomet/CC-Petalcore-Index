@@ -1,8 +1,11 @@
-const API_URL = "https://ryokomet-cloudcomputing.vercel.app";
+const API_URL = "https://ryokomet-cloudcomputing.vercel.app/api/v1";
+const API_KEY = "student-api-key-FDRD";
+const HEADERS = { "x-api-key": API_KEY };
+const FETCH_OPTIONS = { headers: HEADERS };
 
 // API REQUEST HELPER
 async function fetchAPI(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`);
+    const response = await fetch(`${API_URL}${endpoint}`, FETCH_OPTIONS);
 
     if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);

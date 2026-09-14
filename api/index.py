@@ -1,11 +1,23 @@
-from fastapi import FastAPI, HTTPException, Header, Query
+from fastapi import APIRouter, FastAPI, HTTPException, Header, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal, Optional
+
+# CONFIGURATION
+API_KEY = "student-api-key-FDRD"
+API_VERSION = "1.0"
+API_PREFIX = "/api/v1"
+APP_TITLE = "Simple Plant API"
+APP_DESCRIPTION = "A beginner-friendly REST API containing information about plants."
 
 app = FastAPI(
-    title="Simple Plant API",
-    description="A beginner-friendly REST API containing information about plants.",
-    version="1.0.0"
+    title=APP_TITLE,
+    description=APP_DESCRIPTION,
+    version=API_VERSION
 )
+
+api_router = APIRouter(prefix=API_PREFIX)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,12 +27,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# DATA MODEL
+class Plant(BaseModel):
+    model_config = ConfigDict(strict=True, str_strip_whitespace=True, extra="forbid")
+
+    id: int = Field(gt=0)
+    image_slug: str = Field(min_length=1, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    common_name: str = Field(min_length=1)
+    scientific_name: str = Field(min_length=1)
+    family: str = Field(min_length=1)
+    genus: str = Field(min_length=1)
+    plant_type: str = Field(min_length=1)
+    origin: str = Field(min_length=1)
+    habitat: str = Field(min_length=1)
+    lifespan: str = Field(min_length=1)
+    height_m: float = Field(gt=0, allow_inf_nan=False)
+    spread_m: float = Field(gt=0, allow_inf_nan=False)
+    sunlight: Literal[
+        "Full Sun", "Partial Shade", "Full Sun to Partial Shade",
+        "Low Light to Full Sun", "Bright Indirect Light"
+    ]
+    water_requirement: Literal[
+        "Low", "Moderate", "High", "Low to Moderate", "Moderate to High"
+    ]
+    soil_type: str = Field(min_length=1)
+    flower_color: str = Field(min_length=1)
+    flowering_season: str = Field(min_length=1)
+    uses: str = Field(min_length=1)
+    toxicity: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
 # PLANT DATA
 plants = [
 
     {
         "id": 1,
         "common_name": "Rose",
+        "image_slug": "rose",
         "scientific_name": "Rosa",
         "family": "Rosaceae",
         "genus": "Rosa",
@@ -42,6 +86,7 @@ plants = [
     {
         "id": 2,
         "common_name": "Sunflower",
+        "image_slug": "sunflower",
         "scientific_name": "Helianthus annuus",
         "family": "Asteraceae",
         "genus": "Helianthus",
@@ -63,6 +108,7 @@ plants = [
     {
         "id": 3,
         "common_name": "Lavender",
+        "image_slug": "lavender",
         "scientific_name": "Lavandula angustifolia",
         "family": "Lamiaceae",
         "genus": "Lavandula",
@@ -84,6 +130,7 @@ plants = [
     {
         "id": 4,
         "common_name": "Aloe Vera",
+        "image_slug": "aloe-vera",
         "scientific_name": "Aloe vera",
         "family": "Asphodelaceae",
         "genus": "Aloe",
@@ -105,6 +152,7 @@ plants = [
     {
         "id": 5,
         "common_name": "Mango",
+        "image_slug": "mango",
         "scientific_name": "Mangifera indica",
         "family": "Anacardiaceae",
         "genus": "Mangifera",
@@ -126,6 +174,7 @@ plants = [
     {
         "id": 6,
         "common_name": "Basil",
+        "image_slug": "basil",
         "scientific_name": "Ocimum basilicum",
         "family": "Lamiaceae",
         "genus": "Ocimum",
@@ -147,6 +196,7 @@ plants = [
     {
         "id": 7,
         "common_name": "Snake Plant",
+        "image_slug": "snake-plant",
         "scientific_name": "Dracaena trifasciata",
         "family": "Asparagaceae",
         "genus": "Dracaena",
@@ -168,6 +218,7 @@ plants = [
     {
         "id": 8,
         "common_name": "Peace Lily",
+        "image_slug": "peace-lily",
         "scientific_name": "Spathiphyllum",
         "family": "Araceae",
         "genus": "Spathiphyllum",
@@ -189,6 +240,7 @@ plants = [
     {
         "id": 9,
         "common_name": "Bamboo",
+        "image_slug": "bamboo",
         "scientific_name": "Bambusa vulgaris",
         "family": "Poaceae",
         "genus": "Bambusa",
@@ -210,6 +262,7 @@ plants = [
     {
         "id": 10,
         "common_name": "Orchid",
+        "image_slug": "orchid",
         "scientific_name": "Phalaenopsis amabilis",
         "family": "Orchidaceae",
         "genus": "Phalaenopsis",
@@ -231,6 +284,7 @@ plants = [
     {
         "id": 11,
         "common_name": "Coconut Palm",
+        "image_slug": "coconut-palm",
         "scientific_name": "Cocos nucifera",
         "family": "Arecaceae",
         "genus": "Cocos",
@@ -252,6 +306,7 @@ plants = [
     {
         "id": 12,
         "common_name": "Venus Flytrap",
+        "image_slug": "venus-flytrap",
         "scientific_name": "Dionaea muscipula",
         "family": "Droseraceae",
         "genus": "Dionaea",
@@ -273,6 +328,7 @@ plants = [
     {
         "id": 13,
         "common_name": "Pitcher Plant",
+        "image_slug": "pitcher-plant",
         "scientific_name": "Nepenthes alata",
         "family": "Nepenthaceae",
         "genus": "Nepenthes",
@@ -294,6 +350,7 @@ plants = [
     {
         "id": 14,
         "common_name": "Neem",
+        "image_slug": "neem",
         "scientific_name": "Azadirachta indica",
         "family": "Meliaceae",
         "genus": "Azadirachta",
@@ -315,6 +372,7 @@ plants = [
     {
         "id": 15,
         "common_name": "Acacia",
+        "image_slug": "acacia",
         "scientific_name": "Acacia mangium",
         "family": "Fabaceae",
         "genus": "Acacia",
@@ -336,22 +394,48 @@ plants = [
 
 ]
 
+# Validate every record at startup while preserving dictionary access in routes.
+plants = [Plant.model_validate(plant).model_dump() for plant in plants]
+
+# API KEY AUTHENTICATION
+def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key."
+        )
+    return True
+
+
 # HOME
 @app.get("/")
 def home():
 
     return {
-        "message": "Welcome to the Simple Plant API!",
+        "message": f"Welcome to the {APP_TITLE}!",
+        "version": API_VERSION,
         "endpoints": [
-            "/plants",
-            "/plants/{id}",
-            "/plants/search"
+            "/health",
+            f"{API_PREFIX}/plants",
+            f"{API_PREFIX}/plants/{{plant_id}}",
+            f"{API_PREFIX}/plants/search"
         ]
     }
 
 
-# GET ALL PLANTS
-@app.get("/plants")
+# HEALTH CHECK (Public)
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": APP_TITLE,
+        "version": API_VERSION,
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    }
+
+
+# GET ALL PLANTS (Protected)
+@api_router.get("/plants", dependencies=[Depends(verify_api_key)])
 def get_plants():
 
     return {
@@ -359,32 +443,14 @@ def get_plants():
         "plants": plants
     }
 
-# SEARCH PLANTS
-@app.get("/plants/search")
-def search_plants( q: str = Query(..., min_length=1)):
+# SEARCH PLANTS (Protected)
+@api_router.get("/plants/search", dependencies=[Depends(verify_api_key)])
+def search_plants(q: str = Query(..., min_length=1)):
     q = q.lower()
     results = []
     for plant in plants:
-        searchable_text = (
-            f"{plant['common_name']} "
-            f"{plant['scientific_name']} "
-            f"{plant['family']} "
-            f"{plant['genus']}"
-            f"{plant['plant_type']}"
-            f"{plant['origin']}"
-            f"{plant['habitat']}"
-            f"{plant['lifespan']}"
-            f"{plant['height_m']}"
-            f"{plant['spread_m']}"
-            f"{plant['sunlight']}"
-            f"{plant['water_requirement']}"
-            f"{plant['soil_type']}"
-            f"{plant['flower_color']}"
-            f"{plant['flowering_season']}"
-            f"{plant['uses']}"
-            f"{plant['toxicity']}"
-            f"{plant['description']}"
-        ).lower()
+        # Include all 20 fields, separating values to avoid joining words together.
+        searchable_text = " ".join(str(value) for value in plant.values()).lower()
 
         if q in searchable_text:
             results.append(plant)
@@ -395,8 +461,8 @@ def search_plants( q: str = Query(..., min_length=1)):
         "results": results
     }
 
-# GET ONE PLANT
-@app.get("/plants/{plant_id}")
+# GET ONE PLANT (Protected)
+@api_router.get("/plants/{plant_id}", dependencies=[Depends(verify_api_key)])
 def get_plant(plant_id: int):
 
     for plant in plants:
@@ -408,3 +474,6 @@ def get_plant(plant_id: int):
         status_code=404,
         detail="plant not found."
     )
+
+
+app.include_router(api_router)
