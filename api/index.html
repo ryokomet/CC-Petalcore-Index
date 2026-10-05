@@ -4,57 +4,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Plant Finder</title>
+    <meta name="theme-color" content="#f6f5ef">
+    <meta name="description" content="Explore a friendly field guide to common garden and houseplants with Petalcore Index.">
+    <title>Petalcore Index — Explore the plant library</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-    <header>
-        <div class="brand">
-            <svg class="brand-icon" viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M24 42V14"/>
-                <path d="M24 14c0-7 5-11 12-11-1 7-5 12-12 12"/>
-                <path d="M24 22c0-6-5-9-11-9 1 6 5 10 11 10"/>
-                <path d="M24 30c0-5-4-8-9-8 1 5 4 8 9 8"/>
-            </svg>
-            <div class="brand-text">
-                <h1>Simple Plant Finder</h1>
-                <p>A quick-reference field guide to common garden and houseplants. Powered by REST API</p>
-            </div>
+<body class="index-page">
+    <header class="site-header">
+        <div class="nav-shell">
+            <a class="wordmark" href="../" aria-label="Petalcore home">
+                <span class="wordmark-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M24 42V14"/><path d="M24 14c0-7 5-11 12-11-1 7-5 12-12 12"/><path d="M24 22c0-6-5-9-11-9 1 6 5 10 11 10"/><path d="M24 30c0-5-4-8-9-8 1 5 4 8 9 8"/>
+                    </svg>
+                </span>
+                <span>petalcore<span class="wordmark-period">.</span></span>
+            </a>
+            <nav class="site-nav" aria-label="Main navigation">
+                <a class="nav-link active" href="../index/" aria-current="page">Explore</a>
+                <a class="nav-link" href="../id/">Identify</a>
+            </nav>
+            <a class="nav-cta" href="../id/">Identify a plant <span aria-hidden="true">↗</span></a>
         </div>
     </header>
 
-    <main>
-
-        <!-- SEARCH -->
-        <section class="search">
-            <input type="text" id="searchInput" placeholder="Search for a plant...">
-            <button onclick="searchPlants()">Search</button>
-            <button class="secondary" onclick="loadPlants()">Show all</button>
+    <main class="page-shell">
+        <section class="hero index-hero" aria-labelledby="hero-title">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="eyebrow-dot"></span> THE PETALCORE FIELD GUIDE</p>
+                <h1 id="hero-title">Get to know what <em>grows</em> around you.</h1>
+                <p class="hero-description">A calm, curious guide to the plants in your home and garden. Search the collection and discover the stories behind each one.</p>
+                <div class="hero-actions">
+                    <a class="button button-primary" href="#collection">Explore the collection <span aria-hidden="true">↓</span></a>
+                    <a class="text-link" href="../id/">Have a photo? Identify it <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="hero-caption"><span class="caption-line"></span> SMALL DISCOVERIES, ROOTED IN NATURE</div>
+            </div>
+            <figure class="hero-visual">
+                <img src="images/orchid.jpg" alt="A cluster of vibrant orchid flowers">
+                <figcaption class="image-note">
+                    <span class="note-mark" aria-hidden="true">✳</span>
+                    <span><strong>Look a little closer.</strong><small>There’s always more to discover.</small></span>
+                </figcaption>
+                <span class="visual-index" aria-hidden="true">01 / FIELD NOTES</span>
+            </figure>
         </section>
 
-        <section>
-            <h2>The collection</h2>
-            <div id="plantList" class="plant-list">
-                Loading plants...
+        <section id="collection" class="collection-section" aria-labelledby="collection-title">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">A GROWING LIBRARY</p>
+                    <h2 id="collection-title">Plants worth knowing</h2>
+                    <p class="section-description">Browse the collection or search for a familiar face.</p>
+                </div>
+                <span class="collection-mark" aria-hidden="true">✳ &nbsp; FIELD GUIDE NO. 01</span>
+            </div>
+
+            <div class="search-panel">
+                <label class="search-label" for="searchInput">Find a plant</label>
+                <div class="search">
+                    <span class="search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+                    </span>
+                    <input type="search" id="searchInput" placeholder="Try “lavender” or “indoor plants”" autocomplete="off">
+                    <button type="button" onclick="searchPlants()">Search <span aria-hidden="true">→</span></button>
+                    <button type="button" class="secondary" onclick="loadPlants()">Show all</button>
+                </div>
+            </div>
+
+            <div id="plantList" class="plant-list" aria-live="polite" aria-busy="true">
+                <p class="loading-text">Gathering the field notes…</p>
             </div>
         </section>
     </main>
 
-    <footer>
-        <p>Data provided by the Simple Plant API</p>
+    <footer class="site-footer">
+        <a class="footer-wordmark" href="../">petalcore<span>.</span></a>
+        <p>A little more connected to the natural world.</p>
+        <span>© Petalcore</span>
     </footer>
 
-    <!-- PLANT DETAILS MODAL -->
-    <div id="plantModal" class="modal-overlay">
+    <div id="plantModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Plant details">
         <div class="modal-box">
-            <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
-            <div class="modal-image">
-                <img id="modalImage" src="" alt="">
-            </div>
+            <button class="modal-close" onclick="closeModal()" aria-label="Close plant details">&times;</button>
+            <div class="modal-image"><img id="modalImage" src="" alt=""></div>
             <div class="modal-content" id="modalContent"></div>
         </div>
     </div>
