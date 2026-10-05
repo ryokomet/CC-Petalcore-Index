@@ -1,6 +1,6 @@
 # Petalcore Index
 
-A plant-library. Look up plans and learn a few details about them.
+A plant-library. Look up plants and learn a few details about them.
 
 ## How it works
 
