@@ -1,6 +1,6 @@
 const API_URL = "https://ryokomet-cloudcomputing.vercel.app/api/v1";
-const API_KEY = "student-api-key-FDRD";
-const HEADERS = { "2024-2-00682-api-key-FDRD": API_KEY };
+const API_KEY = "2024-2-00682-api-key-FDRD";
+const HEADERS = { "x-api-key": API_KEY };
 const FETCH_OPTIONS = { headers: HEADERS };
 
 // API REQUEST HELPER
