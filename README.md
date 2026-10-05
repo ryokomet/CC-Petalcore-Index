@@ -1,6 +1,6 @@
 # Petalcore Index
 
-Petalcore Index is the plant-library part of our semester project. It lets people look up plants and learn a few details about them.
+A plant-library. Look up plans and learn a few details about them.
 
 ## How it works
 
