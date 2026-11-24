@@ -1,293 +1,303 @@
-const API_URL = "https://ryokomet-cloudcomputing.vercel.app/api/v1";
-const API_KEY = "2024-2-00682-api-key-FDRD";
-const HEADERS = { "x-api-key": API_KEY };
-const FETCH_OPTIONS = { headers: HEADERS };
+const API_CONFIG_TIMEOUT_MS = 8000;
+const API_REQUEST_TIMEOUT_MS = 12000;
+const $ = (id) => document.getElementById(id);
 
-// API REQUEST HELPER
-async function fetchAPI(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`, FETCH_OPTIONS);
+let apiConfigPromise = null;
+let listRequestId = 0;
+let detailRequestId = 0;
+let modalTrigger = null;
 
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+function getApiOrigin() {
+    const origin = window.PETALCORE_API_ORIGIN;
+    if (typeof origin !== "string" || !origin.trim()) {
+        throw new Error("The shared Petalcore API is not configured.");
     }
-
-    return await response.json();
+    return origin.trim().replace(/\/+$/, "");
 }
 
-// GET ALL PLANTS
-async function loadPlants() {
-    const plantList = document.getElementById("plantList");
-
-    if (!plantList) {
-        console.error("Plant list element not found.");
-        return;
-    }
-
-    plantList.innerHTML = '<p class="loading-text">Loading plants...</p>';
+async function fetchJson(url, options = {}, timeoutMs = API_REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const data = await fetchAPI("/plants");
-        displayPlants(data.plants || []);
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+            cache: options.cache || "no-store"
+        });
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error("The server returned an unexpected response. Please try again.");
+        }
+
+        if (!response.ok) {
+            const detail = Array.isArray(data.detail)
+                ? data.detail.map((item) => item.msg).filter(Boolean).join(" ")
+                : data.detail;
+            throw new Error(
+                typeof detail === "string" && detail
+                    ? detail
+                    : "The plant request failed (HTTP " + response.status + ")."
+            );
+        }
+        return data;
     } catch (error) {
-        console.error("Failed to load plants:", error);
-        plantList.innerHTML = "<p>Unable to connect to the API.</p>";
+        if (error.name === "AbortError") {
+            throw new Error("The request took too long. Please try again.");
+        }
+        throw error;
+    } finally {
+        clearTimeout(timer);
     }
 }
 
-// SEARCH PLANTS
-async function searchPlants() {
-    const searchInput = document.getElementById("searchInput");
-    const plantList = document.getElementById("plantList");
-
-    if (!searchInput || !plantList) {
-        console.error("Search or plant list element not found.");
-        return;
+async function getApiConfig() {
+    if (!apiConfigPromise) {
+        const origin = getApiOrigin();
+        apiConfigPromise = fetchJson(
+            origin + "/config/index",
+            {},
+            API_CONFIG_TIMEOUT_MS
+        ).then((config) => {
+            if (typeof config.api_url !== "string" || typeof config.api_key !== "string") {
+                throw new Error("The Index API configuration is incomplete.");
+            }
+            return {
+                apiUrl: new URL(config.api_url, origin + "/").href.replace(/\/+$/, ""),
+                apiKey: config.api_key
+            };
+        }).catch((error) => {
+            apiConfigPromise = null;
+            throw error;
+        });
     }
-
-    const query = searchInput.value.trim();
-
-    // Empty search = show everything
-    if (!query) {
-        loadPlants();
-        return;
-    }
-
-    plantList.innerHTML = '<p class="loading-text">Searching...</p>';
-
-    try {
-        const data = await fetchAPI(
-            `/plants/search?q=${encodeURIComponent(query)}`
-        );
-
-        displayPlants(data.results || []);
-    } catch (error) {
-        console.error("Search failed:", error);
-        plantList.innerHTML = "<p>Search failed. Please try again.</p>";
-    }
+    return apiConfigPromise;
 }
 
-// DISPLAY PLANTS
-function slugify(text) {
-    return text
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-");
-}
-
-function displayPlants(plants) {
-    const plantList = document.getElementById("plantList");
-
-    if (!plantList) {
-        console.error("Plant list element not found.");
-        return;
-    }
-
-    plantList.innerHTML = "";
-
-    if (!plants || plants.length === 0) {
-        plantList.innerHTML = "<p>No plants found.</p>";
-        return;
-    }
-
-    plants.forEach(plant => {
-        const card = document.createElement("div");
-        card.className = "plant-card";
-
-        card.innerHTML = `
-            <div class="plant-image">
-                <img
-                    src="images/${slugify(plant.common_name)}.jpg"
-                    alt="${plant.common_name}"
-                    onerror="this.onerror=null;this.src='images/placeholder.jpg';"
-                >
-            </div>
-
-            <div class="plant-card-body">
-                <h3>${plant.common_name}</h3>
-
-                <p class="plant-scientific">
-                    ${plant.scientific_name}
-                </p>
-
-                <p class="plant-family">
-                    ${plant.family}
-                </p>
-
-                <p class="plant-description">
-                    ${plant.description}
-                </p>
-
-                <button onclick="viewPlant(${plant.id})">
-                    View Details
-                </button>
-            </div>
-        `;
-
-        plantList.appendChild(card);
+async function fetchPlantData(endpoint) {
+    const config = await getApiConfig();
+    return fetchJson(config.apiUrl + endpoint, {
+        headers: { "x-api-key": config.apiKey }
     });
 }
 
-// GET ONE PLANT
-async function viewPlant(id) {
-    try {
-        const plant = await fetchAPI(`/plants/${id}`);
+function makeTextElement(tag, className, value) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    element.textContent = value == null ? "" : String(value);
+    return element;
+}
 
-        const modalImage = document.getElementById("modalImage");
-        const modalContent = document.getElementById("modalContent");
+function showPlantListMessage(message, className = "loading-text") {
+    const list = $("plantList");
+    list.replaceChildren(makeTextElement("p", className, message));
+}
 
-        if (!modalImage || !modalContent) {
-            console.error("Modal elements not found in the page.");
+function setPlantImage(image, plant, apiUrl) {
+    const slug = typeof plant.image_slug === "string" ? plant.image_slug : "";
+    const localImage = slug ? "images/" + encodeURIComponent(slug) + ".jpg" : null;
+    image.alt = plant.common_name ? "Photo of " + plant.common_name : "Plant photo";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.onerror = () => {
+        if (!image.dataset.triedLocal && localImage) {
+            image.dataset.triedLocal = "true";
+            image.src = localImage;
             return;
         }
+        image.onerror = null;
+        image.src = "images/placeholder.jpg";
+    };
+    image.src = apiUrl + "/plants/" + encodeURIComponent(plant.id) + "/image";
+}
 
-        modalImage.src = `images/${slugify(plant.common_name)}.jpg`;
+function createPlantCard(plant, apiUrl) {
+    const card = document.createElement("article");
+    card.className = "plant-card";
 
-        modalImage.onerror = function () {
-            this.onerror = null;
-            this.src = "images/placeholder.jpg";
-        };
+    const imageWrap = document.createElement("div");
+    imageWrap.className = "plant-image";
+    const image = document.createElement("img");
+    setPlantImage(image, plant, apiUrl);
+    imageWrap.append(image);
 
-        modalImage.alt = plant.common_name;
+    const content = document.createElement("div");
+    content.className = "plant-card-body";
+    content.append(
+        makeTextElement("h3", "", plant.common_name),
+        makeTextElement("p", "plant-scientific", plant.scientific_name),
+        makeTextElement("p", "plant-family", plant.family),
+        makeTextElement("p", "plant-description", plant.description)
+    );
 
-        modalContent.innerHTML = `
-            <h2>${plant.common_name}</h2>
+    const button = makeTextElement("button", "", "View Details");
+    button.type = "button";
+    button.addEventListener("click", () => viewPlant(plant.id, button));
+    content.append(button);
+    card.append(imageWrap, content);
+    return card;
+}
 
-            <p class="modal-scientific">
-                ${plant.scientific_name}
-            </p>
+function displayPlants(plants, apiUrl) {
+    const list = $("plantList");
+    list.replaceChildren();
 
-            <div class="modal-row">
-                <span>Family</span>
-                <span>${plant.family}</span>
-            </div>
+    if (!plants.length) {
+        showPlantListMessage("No plants found.", "empty-state");
+        return;
+    }
 
-            <div class="modal-row">
-                <span>Genus</span>
-                <span>${plant.genus}</span>
-            </div>
+    const fragment = document.createDocumentFragment();
+    for (const plant of plants) {
+        fragment.append(createPlantCard(plant, apiUrl));
+    }
+    list.append(fragment);
+}
 
-            <div class="modal-row">
-                <span>Plant Type</span>
-                <span>${plant.plant_type}</span>
-            </div>
+async function loadPlants() {
+    const requestId = ++listRequestId;
+    const list = $("plantList");
+    list.setAttribute("aria-busy", "true");
+    showPlantListMessage("Gathering the field notes…");
 
-            <div class="modal-row">
-                <span>Origin</span>
-                <span>${plant.origin}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Habitat</span>
-                <span>${plant.habitat}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Lifespan</span>
-                <span>${plant.lifespan}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Height</span>
-                <span>${plant.height_m} m</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Spread</span>
-                <span>${plant.spread_m} m</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Sunlight</span>
-                <span>${plant.sunlight}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Water</span>
-                <span>${plant.water_requirement}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Soil Type</span>
-                <span>${plant.soil_type}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Flower Color</span>
-                <span>${plant.flower_color}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Flowering Season</span>
-                <span>${plant.flowering_season}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Uses</span>
-                <span>${plant.uses}</span>
-            </div>
-
-            <div class="modal-row">
-                <span>Toxicity</span>
-                <span>${plant.toxicity}</span>
-            </div>
-
-            <p class="modal-description">
-                ${plant.description}
-            </p>
-        `;
-
-        openModal();
+    try {
+        const [data, config] = await Promise.all([
+            fetchPlantData("/plants"),
+            getApiConfig()
+        ]);
+        if (requestId !== listRequestId) return;
+        displayPlants(Array.isArray(data.plants) ? data.plants : [], config.apiUrl);
     } catch (error) {
-        console.error("Failed to retrieve plant:", error);
-        alert("Unable to retrieve plant.");
+        if (requestId !== listRequestId) return;
+        showPlantListMessage(error.message, "error-message");
+    } finally {
+        if (requestId === listRequestId) list.setAttribute("aria-busy", "false");
     }
 }
 
-// MODAL
-function openModal() {
-    const modal = document.getElementById("plantModal");
+async function searchPlants() {
+    const query = $("searchInput").value.trim();
+    if (!query) return loadPlants();
 
-    if (modal) {
-        modal.classList.add("open");
+    const requestId = ++listRequestId;
+    const list = $("plantList");
+    list.setAttribute("aria-busy", "true");
+    showPlantListMessage("Searching the plant library…");
+
+    try {
+        const [data, config] = await Promise.all([
+            fetchPlantData("/plants/search?q=" + encodeURIComponent(query)),
+            getApiConfig()
+        ]);
+        if (requestId !== listRequestId) return;
+        displayPlants(Array.isArray(data.results) ? data.results : [], config.apiUrl);
+    } catch (error) {
+        if (requestId !== listRequestId) return;
+        showPlantListMessage(error.message, "error-message");
+    } finally {
+        if (requestId === listRequestId) list.setAttribute("aria-busy", "false");
     }
+}
+
+function appendDetailRow(container, label, value) {
+    const row = document.createElement("div");
+    row.className = "modal-row";
+    row.append(
+        makeTextElement("span", "", label),
+        makeTextElement("span", "", value || "Not provided")
+    );
+    container.append(row);
+}
+
+function displayPlantDetails(plant, apiUrl) {
+    const content = $("modalContent");
+    content.replaceChildren();
+    content.append(
+        makeTextElement("h2", "", plant.common_name),
+        makeTextElement("p", "modal-scientific", plant.scientific_name)
+    );
+
+    const details = [
+        ["Family", plant.family],
+        ["Genus", plant.genus],
+        ["Plant Type", plant.plant_type],
+        ["Origin", plant.origin],
+        ["Habitat", plant.habitat],
+        ["Lifespan", plant.lifespan],
+        ["Height", plant.height_m + " m"],
+        ["Spread", plant.spread_m + " m"],
+        ["Sunlight", plant.sunlight],
+        ["Water", plant.water_requirement],
+        ["Soil Type", plant.soil_type],
+        ["Flower Color", plant.flower_color],
+        ["Flowering Season", plant.flowering_season],
+        ["Uses", plant.uses],
+        ["Toxicity", plant.toxicity]
+    ];
+    for (const [label, value] of details) appendDetailRow(content, label, value);
+    content.append(makeTextElement("p", "modal-description", plant.description));
+
+    const image = $("modalImage");
+    image.dataset.triedLocal = "";
+    setPlantImage(image, plant, apiUrl);
+}
+
+function openModal(trigger) {
+    const modal = $("plantModal");
+    modalTrigger = trigger || null;
+    modal.setAttribute("aria-hidden", "false");
+    modal.classList.add("open");
+    $("closeModalButton").focus();
 }
 
 function closeModal() {
-    const modal = document.getElementById("plantModal");
+    const modal = $("plantModal");
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    if (modalTrigger) modalTrigger.focus();
+    modalTrigger = null;
+}
 
-    if (modal) {
-        modal.classList.remove("open");
+async function viewPlant(id, trigger) {
+    const requestId = ++detailRequestId;
+    const content = $("modalContent");
+    content.replaceChildren(makeTextElement("p", "loading-text", "Loading plant details…"));
+    openModal(trigger);
+
+    try {
+        const [plant, config] = await Promise.all([
+            fetchPlantData("/plants/" + encodeURIComponent(id)),
+            getApiConfig()
+        ]);
+        if (requestId !== detailRequestId) return;
+        displayPlantDetails(plant, config.apiUrl);
+    } catch (error) {
+        if (requestId !== detailRequestId) return;
+        content.replaceChildren(makeTextElement("p", "error-message", error.message));
     }
 }
 
-// CLOSE MODAL WHEN CLICKING OVERLAY
-const plantModalEl = document.getElementById("plantModal");
-
-if (plantModalEl) {
-    plantModalEl.addEventListener("click", function (event) {
-        if (event.target === this) {
+function bindEvents() {
+    $("searchForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        searchPlants();
+    });
+    $("showAllButton").addEventListener("click", () => {
+        $("searchInput").value = "";
+        loadPlants();
+    });
+    $("closeModalButton").addEventListener("click", closeModal);
+    $("plantModal").addEventListener("click", (event) => {
+        if (event.target === event.currentTarget) closeModal();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && $("plantModal").classList.contains("open")) {
             closeModal();
         }
     });
 }
 
-// CLOSE MODAL WITH ESCAPE
-document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-        closeModal();
-    }
-});
-
-// SEARCH WITH ENTER
-const searchInputEl = document.getElementById("searchInput");
-
-if (searchInputEl) {
-    searchInputEl.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            searchPlants();
-        }
-    });
-}
-
-// START APPLICATION
+bindEvents();
 loadPlants();

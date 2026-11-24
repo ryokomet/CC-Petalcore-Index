@@ -1,11 +1,14 @@
 # Petalcore Index
 
-A plant-library. Look up plants and learn a few details about them.
+Petalcore Index is the plant-library frontend for Petalcore Platform. It reads the live plant catalog, searches it, and displays plant details and database-backed photos through the shared Platform API.
 
-## How it works
+## Data and security
 
-The plant information is stored in the API. When someone searches, the website asks the API for matching plants and shows the results. Selecting a plant opens more information about it.
+- Plant records and uploaded images are stored by the shared Platform API and cloud database.
+- The page loads its public Index client key from `/config/index`; it contains no database or admin credentials.
+- Record creation, updates, and deletion stay in Platform's protected admin tools.
+- This project no longer carries a second in-memory API or a duplicate plant catalog.
 
-## How to use it
+## Use
 
-Open Petalcore Platform and choose **Index**. Browse the plants or type a plant name in the search box, then select a result to see its details.
+Open Petalcore Platform and choose **Index**. To deploy this frontend separately, set the Vercel project root to `api/`, keep `PETALCORE_API_ORIGIN` in `api/config.js` pointed at the Platform deployment, and allow that frontend's origin in the Platform API's `ALLOWED_ORIGINS` setting.

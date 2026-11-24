@@ -16,7 +16,7 @@
 <body class="index-page">
     <header class="site-header">
         <div class="nav-shell">
-            <a class="wordmark" href="../" aria-label="Petalcore home">
+            <a class="wordmark" href="https://cc-petalcore-platform.vercel.app/" aria-label="Petalcore home">
                 <span class="wordmark-icon" aria-hidden="true">
                     <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M24 42V14"/><path d="M24 14c0-7 5-11 12-11-1 7-5 12-12 12"/><path d="M24 22c0-6-5-9-11-9 1 6 5 10 11 10"/><path d="M24 30c0-5-4-8-9-8 1 5 4 8 9 8"/>
@@ -25,9 +25,9 @@
                 <span>petalcore<span class="wordmark-period">.</span></span>
             </a>
             <nav class="site-nav" aria-label="Main navigation">
-                <a class="nav-link active" href="../index/" aria-current="page">Index</a>
-                <a class="nav-link" href="../id/">Identify</a>
-                <a class="nav-link" href="../select/">Select</a>
+                <a class="nav-link active" href="https://cc-petalcore-platform.vercel.app/index/" aria-current="page">Explore</a>
+                <a class="nav-link" href="https://cc-petalcore-platform.vercel.app/id/">Identify</a>
+                <a class="nav-link" href="https://cc-petalcore-platform.vercel.app/select/">Select</a>
             </nav>
         </div>
     </header>
@@ -40,7 +40,7 @@
                 <p class="hero-description">A calm, curious guide to the plants in your home and garden. Search the collection and discover the stories behind each one.</p>
                 <div class="hero-actions">
                     <a class="button button-primary" href="#collection">Explore the collection <span aria-hidden="true">↓</span></a>
-                    <a class="text-link" href="../id/">Have a photo? Identify it <span aria-hidden="true">→</span></a>
+                    <a class="text-link" href="https://cc-petalcore-platform.vercel.app/id/">Have a photo? Identify it <span aria-hidden="true">→</span></a>
                 </div>
                 <div class="hero-caption"><span class="caption-line"></span> SMALL DISCOVERIES, ROOTED IN NATURE</div>
             </div>
@@ -66,14 +66,14 @@
 
             <div class="search-panel">
                 <label class="search-label" for="searchInput">Find a plant</label>
-                <div class="search">
+                <form id="searchForm" class="search">
                     <span class="search-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
                     </span>
                     <input type="search" id="searchInput" placeholder="Try “lavender” or “indoor plants”" autocomplete="off">
-                    <button type="button" onclick="searchPlants()">Search <span aria-hidden="true">→</span></button>
-                    <button type="button" class="secondary" onclick="loadPlants()">Show all</button>
-                </div>
+                    <button type="submit">Search <span aria-hidden="true">→</span></button>
+                    <button id="showAllButton" type="button" class="secondary">Show all</button>
+                </form>
             </div>
 
             <div id="plantList" class="plant-list" aria-live="polite" aria-busy="true">
@@ -83,19 +83,20 @@
     </main>
 
     <footer class="site-footer">
-        <a class="footer-wordmark" href="../">petalcore<span>.</span></a>
+        <a class="footer-wordmark" href="https://cc-petalcore-platform.vercel.app/">petalcore<span>.</span></a>
         <p>A little more connected to the natural world.</p>
         <span>© Petalcore</span>
     </footer>
 
-    <div id="plantModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Plant details">
+    <div id="plantModal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Plant details">
         <div class="modal-box">
-            <button class="modal-close" onclick="closeModal()" aria-label="Close plant details">&times;</button>
+            <button id="closeModalButton" class="modal-close" type="button" aria-label="Close plant details">&times;</button>
             <div class="modal-image"><img id="modalImage" src="" alt=""></div>
             <div class="modal-content" id="modalContent"></div>
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
